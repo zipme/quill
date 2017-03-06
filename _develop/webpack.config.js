@@ -132,6 +132,7 @@ module.exports = function(env) {
     config.module.rules[3].use[0].options = {
       plugins: ['transform-es2015-modules-commonjs']
     };
+    config.devtool = 'eval';
   }
 
   if (env && env.minimize) {

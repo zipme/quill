@@ -79,14 +79,16 @@
     "url": "https://github.com/quilljs/quill/issues"
   },
   "scripts": {
-    "build": "webpack --config _develop/webpack.config.js; rm dist/quill.core dist/quill.bubble dist/quill.snow;",
+    "build": "webpack --config _develop/webpack.config.js && rm dist/quill.core dist/quill.bubble dist/quill.snow",
     "build:release": "./_develop/scripts/release.sh",
-    "start": "npm run build; foreman start -f _develop/procfile",
+    "dev": "foreman start -f _develop/procfile",
+    "start": "npm run build && foreman start -f _develop/procfile",
+    "start:win": "npm run build && foreman start -f _develop/procfile.windows",
     "test": "npm run test:unit",
-    "test:all": "npm run test:unit; npm run test:functional",
+    "test:all": "npm run test:unit && npm run test:functional",
     "test:functional": "./_develop/scripts/webdriver.sh",
-    "test:unit": "npm run build; karma start _develop/karma.config.js",
-    "test:coverage": "webpack --env.coverage --config _develop/webpack.config.js; karma start _develop/karma.config.js --reporters coverage",
+    "test:unit": "npm run build && karma start _develop/karma.config.js",
+    "test:coverage": "webpack --env.coverage --config _develop/webpack.config.js && karma start _develop/karma.config.js --reporters coverage",
     "travis": "karma start _develop/karma.config.js --reporters dots,saucelabs",
     "webdriver:start": "webdriver-manager start",
     "webdriver:update": "webdriver-manager update"
