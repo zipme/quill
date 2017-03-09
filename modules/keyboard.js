@@ -174,6 +174,63 @@ Keyboard.DEFAULTS = {
     },
     'indent code-block': makeCodeBlockHandler(true),
     'outdent code-block': makeCodeBlockHandler(false),
+    'indent table': {
+      key: Keyboard.keys.TAB,
+      format: ['table'],
+      handler: function(range) {
+        let TableCell = Parchment.query('table-cell');
+        let index = range.index;
+        let [cell] = this.quill.scroll.descendant(TableCell, index);
+        if (!cell) return;
+
+        let nextCellIndex
+        let selectionLength
+        if (cell.next) {
+          nextCellIndex = this.quill.getIndex(cell.next)
+          selectionLength = cell.next.length() - 1
+        } else {
+          const nextRow = cell.parent.next
+          if (nextRow) {
+            const firstCell = nextRow.children.head
+            nextCellIndex = this.quill.getIndex(firstCell)
+            selectionLength = firstCell.length() - 1
+          } else {
+            // TODO(2Pac): insert new row at the end
+            return
+          }
+        }
+        this.quill.setSelection(nextCellIndex, selectionLength, Quill.sources.SILENT)
+      }
+    },
+    'outdent table': {
+      key: Keyboard.keys.TAB,
+      shiftKey: true,
+      format: ['table'],
+      handler: function(range) {
+        let TableCell = Parchment.query('table-cell');
+        let index = range.index;
+        let [cell] = this.quill.scroll.descendant(TableCell, index);
+        if (!cell) return;
+
+        let prevCellIndex
+        let selectionLength
+        if (cell.prev) {
+          prevCellIndex = this.quill.getIndex(cell.prev)
+          selectionLength = cell.prev.length() - 1
+        } else {
+          const prevRow = cell.parent.prev
+          if (prevRow) {
+            const lastCell = prevRow.children.tail
+            prevCellIndex = this.quill.getIndex(lastCell)
+            selectionLength = lastCell.length() - 1
+          } else {
+            // Pressing shift-tab in the first cell in the table should do nothing
+            return
+          }
+        }
+        this.quill.setSelection(prevCellIndex, selectionLength, Quill.sources.SILENT)
+      }
+    },
     'remove tab': {
       key: Keyboard.keys.TAB,
       shiftKey: true,
