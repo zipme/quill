@@ -1,0 +1,153 @@
+<!-- Include stylesheet -->
+<link href="http://localhost:9080/quill.snow.css" rel="stylesheet">
+<style>
+  .container {
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+    display: inline-block;
+    float: left;
+    height: 100%;
+    width: 50%;
+  }
+  .container:first-child {
+    border-right: 0px;
+  }
+  #delta {
+    font-family: monospace;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+</style>
+
+<!-- Create the editor container -->
+<div class="container" id="editor">
+  <p>Hello World!</p>
+  <p>Some initial <strong>bold</strong> text</p>
+  <p><br></p>
+  <p><br></p>
+</div>
+<div class="container" id="delta"></div>
+
+<!-- Include the Quill library -->
+<script src="http://localhost:9080/quill.js"></script>
+
+<!-- Initialize Quill editor -->
+<script>
+  const Delta = Quill.import('delta')
+  const Parchment = Quill.import('parchment')
+
+  const getClosestNewLineIndex = index => {
+    return index + quill.getContents().map(op => typeof op.insert === 'string' ? op.insert : ' ')
+      .join('')
+      .slice(index)
+      .indexOf('\n')
+  }
+
+  const insertTable = () => {
+    const columns = 3
+    const rows = 2
+    const { index } = quill.getSelection()
+
+    const range = quill.getSelection()
+    if (!range) return
+    const newLineIndex = getClosestNewLineIndex(range.index + range.length)
+    let changeDelta = new Delta().retain(newLineIndex)
+    changeDelta = changeDelta.insert('\n')
+    const tableId = 'table-' + Math.random().toString(36).slice(2)
+    for (let i = 0; i < rows; i++) {
+      let rowId = 'row-' + Math.random().toString(36).slice(2)
+      for (let j = 0; j < columns; j++) {
+        let cellId = 'cell-' + Math.random().toString(36).slice(2)
+        changeDelta = changeDelta.insert('\n', { 'table-cell': { tableId, rowId, cellId } })
+      }
+    }
+    quill.updateContents(changeDelta, Quill.sources.USER)
+    quill.setSelection(newLineIndex + 1)
+  }
+
+  const insertTableRowAbove = () => {
+    const { index } = quill.getSelection()
+    const [line] = quill.getLine(index)
+    let row = line
+    do {
+      row = row.parent
+    } while (row && row.statics.blotName !== 'table-row')
+    if (!row) return
+    const { tableId, rowId } = row.formats()['table-row']
+
+    let newRowId = 'row-' + Math.random().toString(36).slice(2)
+    const table = row.parent
+    for (let i = 0; i < row.children.length; i++) {
+      let newCellId = 'cell-' + Math.random().toString(36).slice(2)
+      const cell = Parchment.create('table-cell', { tableId, rowId: newRowId, cellId: newCellId});
+      table.insertBefore(cell, row)
+    }
+  }
+
+  const insertTableColumnLeft = () => {
+    const { index } = quill.getSelection()
+    const [line] = quill.getLine(index)
+    let cell = line
+    do {
+      cell = cell.parent
+    } while (cell && cell.statics.blotName !== 'table-cell')
+    if (!cell) return
+    const { tableId, rowId, cellId } = cell.formats()['table-cell']
+    let place = 0
+    let currentCell = cell.parent.children.head
+    let currentCellId = currentCell.formats()['table-cell'].cellId
+    while (currentCellId !== cellId) {
+      place += 1
+      currentCell = currentCell.next
+      currentCellId = currentCell.formats()['table-cell'].cellId
+    }
+
+    const table = cell.parent.parent
+    const rows = table.children
+    for (let i = 0, row = rows.head; i < rows.length; i++, row = row.next) {
+      let refCell = row.children.head
+      for (let j = 0; j < place; j++) {
+        refCell = refCell.next
+      }
+
+      let newCellId = 'cell-' + Math.random().toString(36).slice(2)
+      const { rowId: currentRowId } = row.formats()['table-row']
+      const newCell = Parchment.create('table-cell', { tableId, rowId: currentRowId, cellId: newCellId});
+      row.insertBefore(newCell, refCell)
+    }
+  }
+
+  const toolbar = {
+    container: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'link'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      ['clean'],
+      ['table', 'table-insert-rows', 'table-insert-columns'],
+    ],
+    handlers: {
+      table: () => insertTable(),
+      ['table-insert-rows']: () => insertTableRowAbove(),
+      ['table-insert-columns']: () => insertTableColumnLeft(),
+    }
+  };
+  const quill = new Quill('#editor', {
+    modules: {
+      toolbar
+    },
+    theme: 'snow'
+  });
+
+  quill.on('text-change', update);
+  const container = document.querySelector('#delta');
+  update();
+
+  function update(delta) {
+    const contents = quill.getContents();
+    let html = "contents = " + JSON.stringify(contents, null, 2);
+    if (delta) {
+      html = "change = " + JSON.stringify(delta, null, 2) + "\n\n" + html;
+    }
+    container.innerHTML = html;
+  }
+</script>
