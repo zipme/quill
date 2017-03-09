@@ -20,6 +20,7 @@ import Script from './formats/script';
 import Strike from './formats/strike';
 import Underline from './formats/underline';
 
+import Table, { TableRow, TableCell } from './formats/table';
 import Image from './formats/image';
 import Video from './formats/video';
 
@@ -72,6 +73,9 @@ Quill.register({
   'formats/code-block': CodeBlock,
   'formats/header': Header,
   'formats/list': List,
+  'formats/table': Table,
+  'formats/table-row': TableRow,
+  'formats/table-cell': TableCell,
 
   'formats/bold': Bold,
   'formats/code': InlineCode,

@@ -44,6 +44,9 @@ module.exports = {
     'super'   : require('../assets/icons/superscript.svg'),
   },
   'strike'    : require('../assets/icons/strike.svg'),
+  'table'     : require('../assets/icons/table.svg'),
+  'table-insert-rows' : require('../assets/icons/table-insert-rows.svg'),
+  'table-insert-columns' : require('../assets/icons/table-insert-columns.svg'),
   'underline' : require('../assets/icons/underline.svg'),
   'video'     : require('../assets/icons/video.svg')
 };
