@@ -198,6 +198,14 @@ function addSelect(container, format, values) {
   container.appendChild(input);
 }
 
+const getClosestNewLineIndex = (contents, index) => {
+  return index + contents.map((op) => {
+    return typeof op.insert === 'string' ? op.insert : ' '
+  }).join('')
+    .slice(index)
+    .indexOf('\n')
+}
+
 Toolbar.DEFAULTS = {
   container: null,
   handlers: {
@@ -252,6 +260,76 @@ Toolbar.DEFAULTS = {
         }
       } else {
         this.quill.format('list', value, Quill.sources.USER);
+      }
+    },
+    table: function() {
+      const columns = 3
+      const rows = 2
+
+      const range = this.quill.getSelection()
+      if (!range) return
+      const newLineIndex = getClosestNewLineIndex(this.quill.getContents(), range.index + range.length)
+      let changeDelta = new Delta().retain(newLineIndex)
+      changeDelta = changeDelta.insert('\n')
+      const tableId = 'table-' + Math.random().toString(36).slice(2)
+      for (let i = 0; i < rows; i++) {
+        let rowId = 'row-' + Math.random().toString(36).slice(2)
+        for (let j = 0; j < columns; j++) {
+          let cellId = 'cell-' + Math.random().toString(36).slice(2)
+          changeDelta = changeDelta.insert('\n', { 'table-cell': { tableId, rowId, cellId } })
+        }
+      }
+      this.quill.updateContents(changeDelta, Quill.sources.USER)
+      this.quill.setSelection(newLineIndex + 1)
+    },
+    'table-insert-rows': function() {
+      const { index } = this.quill.getSelection()
+      const [line] = this.quill.getLine(index)
+      let row = line
+      do {
+        row = row.parent
+      } while (row && row.statics.blotName !== 'table-row')
+      if (!row) return
+      const { tableId } = row.formats()['table-row']
+
+      let newRowId = 'row-' + Math.random().toString(36).slice(2)
+      const table = row.parent
+      for (let i = 0; i < row.children.length; i++) {
+        let newCellId = 'cell-' + Math.random().toString(36).slice(2)
+        const cell = Parchment.create('table-cell', { tableId, rowId: newRowId, cellId: newCellId});
+        table.insertBefore(cell, row)
+      }
+    },
+    'table-insert-columns': function() {
+      const { index } = this.quill.getSelection()
+      const [line] = this.quill.getLine(index)
+      let cell = line
+      do {
+        cell = cell.parent
+      } while (cell && cell.statics.blotName !== 'table-cell')
+      if (!cell) return
+      const { tableId, cellId } = cell.formats()['table-cell']
+      let place = 0
+      let currentCell = cell.parent.children.head
+      let currentCellId = currentCell.formats()['table-cell'].cellId
+      while (currentCellId !== cellId) {
+        place += 1
+        currentCell = currentCell.next
+        currentCellId = currentCell.formats()['table-cell'].cellId
+      }
+
+      const table = cell.parent.parent
+      const rows = table.children
+      for (let i = 0, row = rows.head; i < rows.length; i += 1, row = row.next) {
+        let refCell = row.children.head
+        for (let j = 0; j < place; j++) {
+          refCell = refCell.next
+        }
+
+        let newCellId = 'cell-' + Math.random().toString(36).slice(2)
+        const { rowId: currentRowId } = row.formats()['table-row']
+        const newCell = Parchment.create('table-cell', { tableId, rowId: currentRowId, cellId: newCellId});
+        row.insertBefore(newCell, refCell)
       }
     }
   }
