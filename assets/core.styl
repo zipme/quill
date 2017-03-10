@@ -106,13 +106,23 @@ resets(arr)
     li.ql-indent-{num}.ql-direction-rtl.ql-align-right
       padding-right: (3*num + LIST_STYLE_OUTER_WIDTH)em
 
-   table
-     border-collapse: collapse
-   td
-     width: 192px
-     max-width: 192px
-     padding: 4px
-     border: 1px solid black
+  table
+    display: table
+    border-collapse: collapse
+    margin-left: 0
+    margin-right: 0
+  table
+    tr
+      display: table-row
+  table
+    tr
+      td
+        display: table-cell
+        width: 312px
+        max-width: 312px
+        height: 32px
+        padding: 8px
+        border: 1px solid black
 
   .ql-video
     display: block
